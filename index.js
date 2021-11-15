@@ -24,6 +24,7 @@ async function run() {
       const servicesCollection = database.collection("services");
       const orderCollection = database.collection("order");
       const reviewCollection = database.collection("review");
+      const userCollection =database.collection("users")
       // create a document to insert
 
 //manage order
@@ -102,6 +103,14 @@ app.delete('/order/:id',async(req,res)=>{
     res.json(result);
 
 })
+//deleted services
+app.delete('/services/:id',async(req,res)=>{
+    const id =req.params.id;
+    const query = {_id:ObjectId(id)};
+    const result =await servicesCollection.deleteOne(query);
+    res.json(result);
+
+})
 
 // post review
 app.post('/review',async(req,res)=>{
@@ -117,8 +126,58 @@ app.get('/review',async(req,res)=>{
     res.json(reviews)
 })
 
+// post user
+app.post("/addUserInfo",async(req,res)=>{
+console.log(req.body)
+    const result =await userCollection.insertOne(req.body);
+    res.send(result);
+    console.log(result)
+})
+app.put('/addUserInfo',async(req,res)=>{
+const user=req.body;
+const filter={ email:user.email};
+const options={upsert:true};
+const updateDoc = {$set:user};
+const result=await  userCollection.updateOne(filter,updateDoc,options);
+res.json(result)
+})
 
 
+
+//make admin
+app.put("/makeAdmin",async(req,res)=>{
+    const filter={ email:req.body.email};
+    const result=await userCollection.find(filter).toArray();
+    if(result){
+        const document = await userCollection.updateOne(filter,{
+            $set: { role:'admin'},
+        });
+        console.log(document)
+    }
+})
+
+//check admin
+app.get("/checkAdmin/:email",async(req,res)=>{
+    const result = await userCollection.find({ email: req.params.email}).toArray();
+    console.log(result)
+    res.send(result)
+})
+
+
+
+//status update
+
+app.put("/statusUpdate/:id", async (req, res) => {
+    const filter = { _id: ObjectId(req.params.id) };
+    console.log(req.params.id);
+    const result = await orderCollection.updateOne(filter, {
+      $set: {
+        status: req.body.status,
+      },
+    });
+    res.send(result);
+    console.log(result);
+  });
 
       
     } finally {
